@@ -46,10 +46,13 @@ volatillix/
 ## Setup
 
 ```bash
-# 1 — Install dependencies (~2 min)
+## Setup
+
+# 1 — Install dependencies
 pip install -r requirements.txt
 
-# 2 — Train all models — downloads AAPL data, runs ~5-10 min
+# 2 — (Optional) Re-train models from scratch — ~5-10 min
+#     Skip this if you want to use the pre-trained models included in /model
 python train_model.py
 
 # 3 — Start the web app
