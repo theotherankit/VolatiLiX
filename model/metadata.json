@@ -1,0 +1,48 @@
+{
+  "feature_cols": [
+    "Vol_5",
+    "Vol_10",
+    "Vol_20",
+    "RSI",
+    "MACD",
+    "MACD_Hist",
+    "BB_Width",
+    "BB_Position",
+    "Volume_Ratio",
+    "Momentum_5",
+    "Momentum_10",
+    "Momentum_20"
+  ],
+  "feature_display": {
+    "Vol_5": "5-Day Volatility",
+    "Vol_10": "10-Day Volatility",
+    "Vol_20": "20-Day Volatility",
+    "RSI": "RSI (14)",
+    "MACD": "MACD Line",
+    "MACD_Hist": "MACD Histogram",
+    "BB_Width": "Bollinger Width",
+    "BB_Position": "BB Position",
+    "Volume_Ratio": "Volume Ratio",
+    "Momentum_5": "Momentum 5D",
+    "Momentum_10": "Momentum 10D",
+    "Momentum_20": "Momentum 20D"
+  },
+  "ohlcv_cols": [
+    "Open",
+    "High",
+    "Low",
+    "Close",
+    "Volume"
+  ],
+  "time_step": 60,
+  "vol_median": 0.23608370054445504,
+  "rf_train_acc": 0.8874,
+  "rf_test_acc": 0.6774,
+  "mlp_rmse": 5.7071,
+  "mlp_mae": 4.3715,
+  "beta_r2": 0.9674,
+  "n_rf_samples": 3252,
+  "n_mlp_train": 2569,
+  "date_start": "2010-02-02",
+  "date_end": "2022-12-30"
+}
