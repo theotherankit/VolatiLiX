@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VolatiLiX — AAPL Volatility XAI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/static/css/Style.css" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-brand">
+      <span class="brand-box">V</span>
+      <span class="brand-name">Volatili<em>X</em></span>
+    </div>
+    <div class="nav-meta">
+      <span class="nav-tag">AAPL · 2010–2022</span>
+      <span class="nav-tag">RF + MLP + BETA</span>
+    </div>
+    <div class="nav-pills">
+      <span class="pill">LIME</span>
+      <span class="pill">DiCE</span>
+      <span class="pill">SHAP</span>
+      <span class="pill pill-hi">BETA</span>
+      <span class="pill">LRP</span>
+      <span class="pill">Saliency</span>
+    </div>
+  </nav>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-inner">
+      <p class="header-eyebrow">Explainable AI · Stock Volatility · CNS Phase 3</p>
+      <h1 class="header-h1">Apple Stock<br /><span class="h1-em">Complete XAI Dashboard</span></h1>
+      <p class="header-sub">
+        Three models. Nine explanation methods.
+        <strong>Random Forest</strong> (LIME + DiCE) · <strong>MLP Neural Network</strong>
+        (SHAP + Ablation + Permutation + Saliency Map) ·
+        <strong>BETA Surrogate Tree</strong> (Sensitivity + LRP Proxy)
+      </p>
+      <div class="stat-row">
+        <div class="stat"><span class="stat-v" id="s-rf-acc">—</span><span class="stat-l">RF Accuracy</span></div>
+        <div class="stat-sep"></div>
+        <div class="stat"><span class="stat-v" id="s-mlp-rmse">—</span><span class="stat-l">MLP RMSE</span></div>
+        <div class="stat-sep"></div>
+        <div class="stat"><span class="stat-v" id="s-beta-r2">—</span><span class="stat-l">BETA R²</span></div>
+        <div class="stat-sep"></div>
+        <div class="stat"><span class="stat-v">9</span><span class="stat-l">XAI Methods</span></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- Input -->
+    <section class="card input-card">
+      <div class="card-title">Select Trading Date</div>
+      <p class="card-desc">
+        Pick any AAPL trading day (Jan 2010 – Nov 2022). All nine XAI explanations run automatically.
+      </p>
+      <div class="input-row">
+        <div class="field">
+          <label class="field-label">TRADING DATE</label>
+          <input type="date" id="date-input" min="2010-01-04" max="2022-11-30" value="2020-03-16" />
+        </div>
+        <button class="btn-run" id="run-btn" onclick="analyzeDate()">
+          Run Analysis <span class="btn-arrow">→</span>
+        </button>
+      </div>
+      <div class="quick-dates">
+        <span class="qd-label">Notable dates:</span>
+        <button class="qd-btn" onclick="setDate('2020-03-16')">Mar 16 2020 <em>COVID crash</em></button>
+        <button class="qd-btn" onclick="setDate('2018-12-24')">Dec 24 2018 <em>Xmas dip</em></button>
+        <button class="qd-btn" onclick="setDate('2015-08-24')">Aug 24 2015 <em>Flash crash</em></button>
+        <button class="qd-btn" onclick="setDate('2021-11-19')">Nov 19 2021 <em>Bull peak</em></button>
+      </div>
+    </section>
+
+    <div id="loading" class="loading" style="display:none">
+      <div class="spin"></div><span>Running models…</span>
+    </div>
+    <div id="error-box" class="error-box" style="display:none">
+      <span class="err-icon">!</span><span id="error-msg"></span>
+    </div>
+
+    <div id="results" style="display:none">
+
+      <!-- ══ 01: RF Prediction ══════════════════════════════════════════ -->
+      <div class="section-label">
+        <span class="sec-num">01</span>
+        <span class="sec-name">Volatility Prediction</span>
+        <span class="sec-model">Random Forest</span>
+        <span class="sec-date" id="rf-date-badge">—</span>
+      </div>
+      <div class="grid-3">
+        <div class="card verdict-card" id="verdict-card">
+          <div class="card-title">Regime Forecast</div>
+          <div class="verdict-icon" id="verdict-icon">—</div>
+          <div class="verdict-label" id="verdict-label">—</div>
+          <div class="conf-wrap">
+            <svg class="conf-svg" viewBox="0 0 100 100">
+              <circle class="cr-bg" cx="50" cy="50" r="44"/>
+              <circle class="cr-fill" cx="50" cy="50" r="44" id="cr-fill"/>
+            </svg>
+            <div class="conf-text">
+              <span class="conf-num" id="conf-num">—</span>
+              <span class="conf-lbl">confidence</span>
+            </div>
+          </div>
+          <div class="actual-tag" id="actual-tag">—</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Probability Split</div>
+          <div class="donut-wrap"><canvas id="prob-chart"></canvas></div>
+          <div class="prob-rows">
+            <div class="prob-row"><span class="dot dot-lo"></span><span class="prob-name">Low Volatility</span><strong class="prob-val" id="prob-lo">—</strong></div>
+            <div class="prob-row"><span class="dot dot-hi"></span><span class="prob-name">High Volatility</span><strong class="prob-val" id="prob-hi">—</strong></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Global Feature Importance <span class="title-note">(RF)</span></div>
+          <div id="rf-imp-list" class="imp-list"></div>
+        </div>
+      </div>
+
+      <!-- ══ 02: MLP Price Prediction ══════════════════════════════════ -->
+      <div class="section-label">
+        <span class="sec-num">02</span>
+        <span class="sec-name">Price Prediction</span>
+        <span class="sec-model">MLP Neural Network</span>
+        <span class="sec-date" id="mlp-date-badge">—</span>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Next-Day Close Forecast</div>
+          <div id="mlp-loading" class="mini-spin-wrap"><div class="mini-spin"></div> Computing MLP prediction…</div>
+          <div id="mlp-result" style="display:none">
+            <div class="price-row">
+              <div class="price-block"><span class="price-lbl">Predicted</span><span class="price-val predicted" id="mlp-pred">—</span></div>
+              <div class="price-div"></div>
+              <div class="price-block"><span class="price-lbl">Actual</span><span class="price-val actual" id="mlp-actual">—</span></div>
+              <div class="price-div"></div>
+              <div class="price-block"><span class="price-lbl">Error</span><span class="price-val error-val" id="mlp-err-val">—</span></div>
+            </div>
+            <div class="lstm-metrics">
+              <span>RMSE: <strong id="mlp-rmse-val">—</strong></span>
+              <span>MAE: <strong id="mlp-mae-val">—</strong></span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">30-Day Price History + Prediction</div>
+          <div id="spark-loading" class="mini-spin-wrap"><div class="mini-spin"></div> Loading chart…</div>
+          <div id="spark-wrap" style="display:none;position:relative;height:200px;"><canvas id="spark-chart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- ══ 03: LIME ══════════════════════════════════════════════════ -->
+      <div class="section-label">
+        <span class="sec-num">03</span>
+        <span class="sec-name">LIME Explanation</span>
+        <span class="sec-model">Local Interpretable Model-agnostic Explanations · RF</span>
+      </div>
+      <div class="card">
+        <p class="xai-desc">LIME fits a <strong>local linear surrogate</strong> around this RF prediction. <span class="tag-hi">Red</span> = pushes toward High Volatility. <span class="tag-lo">Green</span> = pushes toward Low Volatility.</p>
+        <div id="lime-loading" class="mini-spin-wrap"><div class="mini-spin"></div> Computing LIME…</div>
+        <div id="lime-chart-wrap" style="display:none;position:relative;height:380px;"><canvas id="lime-chart"></canvas></div>
+      </div>
+
+      <!-- ══ 04: DiCE ══════════════════════════════════════════════════ -->
+      <div class="section-label">
+        <span class="sec-num">04</span>
+        <span class="sec-name">DiCE Counterfactuals</span>
+        <span class="sec-model">Diverse Counterfactual Explanations · RF</span>
+      </div>
+      <div class="card">
+        <p class="xai-desc">DiCE answers: <em>"What minimal changes would flip this RF prediction?"</em> Switch from <span class="from-lbl" id="dice-from">—</span> to <span class="to-lbl" id="dice-to">—</span>.</p>
+        <div id="dice-loading" class="mini-spin-wrap"><div class="mini-spin"></div> Generating counterfactuals… <small class="slow-note">(20–40 s)</small></div>
+        <div id="dice-err" class="xai-err" style="display:none"></div>
+        <div id="dice-content" style="display:none"></div>
+      </div>
+
+      <!-- ══ 05: SHAP ══════════════════════════════════════════════════ -->
+      <div class="section-label">
+        <span class="sec-num">05</span>
+        <span class="sec-name">SHAP Explanation</span>
+        <span class="sec-model">SHapley Additive exPlanations · MLP</span>
+      </div>
+      <div class="card">
+        <p class="xai-desc">SHAP KernelExplainer shows which OHLCV features and which of the 60 time-steps most influenced the MLP price prediction.</p>
+        <div id="shap-loading" class="mini-spin-wrap"><div class="mini-spin"></div> Computing SHAP… <small class="slow-note">(up to 60 s)</small></div>
+        <div id="shap-err" class="xai-err" style="display:none"></div>
+        <div id="shap-content" style="display:none">
+          <div class="shap-grid">
+            <div class="shap-panel"><div class="shap-title">Feature Importance (OHLCV)</div><div style="position:relative;height:220px;"><canvas id="shap-feat-chart"></canvas></div></div>
+            <div class="shap-panel"><div class="shap-title">Temporal Importance (60-day window)</div><div style="position:relative;height:220px;"><canvas id="shap-time-chart"></canvas></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ 06: BETA Surrogate Tree  (CNS Phase 3) ════════════════════ -->
+      <div class="section-label">
+        <span class="sec-num">06</span>
+        <span class="sec-name">BETA Surrogate Tree</span>
+        <span class="sec-model">Black Box Explanation via Transparent Approximation · CNS Phase 3</span>
+      </div>
+      <div class="card">
+        <p class="xai-desc">
+          <strong>BETA</strong> trains a shallow <strong>Decision Tree (depth 3)</strong> to mimic the black-box MLP.
+          The surrogate tree globally approximates the MLP's behaviour and reveals which OHLCV features
+          drive predictions in interpretable if-then-else rules. R² shows how faithfully the tree replicates the MLP.
+        </p>
+        <div id="beta-loading" class="mini-spin-wrap"><div class="mini-spin"></div> Computing BETA surrogate…</div>
+        <div id="beta-err" class="xai-err" style="display:none"></div>
+        <div id="beta-content" style="display:none">
+          <div class="beta-stats" id="beta-stats"></div>
+          <div class="shap-grid">
+            <div class="shap-panel"><div class="shap-title">Global Surrogate Feature Importance</div><div style="position:relative;height:220px;"><canvas id="beta-global-chart"></canvas></div></div>
+            <div class="shap-panel"><div class="shap-title">Local Instance Feature Importance</div><div style="position:relative;height:220px;"><canvas id="beta-local-chart"></canvas></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ 07: Sensitivity + LRP  (CNS Phase 3) ══════════════════════ -->
+      <div class="section-label">
+        <span class="sec-num">07</span>
+        <span class="sec-name">Sensitivity Analysis + LRP Proxy</span>
+        <span class="sec-model">Gradient-based Explanations · CNS Phase 3</span>
+      </div>
+      <div class="card">
+        <p class="xai-desc">
+          <strong>Sensitivity Analysis</strong> computes exact numerical derivatives (∂output/∂input) of the MLP —
+          showing which features cause the largest output change when perturbed.
+          <strong>LRP Proxy (Grad × Input)</strong> weights gradients by the actual input values,
+          giving relevance scores that combine sensitivity with feature magnitude.
+        </p>
+        <div id="sens-loading" class="mini-spin-wrap"><div class="mini-spin"></div> Computing gradients… <small class="slow-note">(~10–20 s)</small></div>
+        <div id="sens-err" class="xai-err" style="display:none"></div>
+        <div id="sens-content" style="display:none">
+          <div class="shap-grid">
+            <div class="shap-panel"><div class="shap-title">Sensitivity Analysis (|∂output/∂input|)</div><div style="position:relative;height:220px;"><canvas id="sens-chart"></canvas></div></div>
+            <div class="shap-panel"><div class="shap-title">LRP Proxy (Grad × Input Relevance)</div><div style="position:relative;height:220px;"><canvas id="lrp-chart"></canvas></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ 08: Ablation  (Untitled3) ═════════════════════════════════ -->
+      <div class="section-label">
+        <span class="sec-num">08</span>
+        <span class="sec-name">Ablation Importance</span>
+        <span class="sec-model">Feature Removal Studies · Untitled3</span>
+      </div>
+      <div class="card">
+        <p class="xai-desc">
+          <strong>Ablation Study</strong> zeros out each OHLCV feature for this date's 60-day window
+          and measures how much the MLP prediction changes — revealing each feature's direct contribution.
+        </p>
+        <div id="ablation-loading" class="mini-spin-wrap"><div class="mini-spin"></div> Running ablation…</div>
+        <div id="ablation-err" class="xai-err" style="display:none"></div>
+        <div id="ablation-content" style="display:none">
+          <div class="shap-grid">
+            <div class="shap-panel"><div class="shap-title">Ablation Study (Prediction Change)</div><div style="position:relative;height:220px;"><canvas id="ablation-chart"></canvas></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ 09: Saliency Map  (Untitled3) ═════════════════════════════ -->
+      <div class="section-label">
+        <span class="sec-num">09</span>
+        <span class="sec-name">Saliency Map</span>
+        <span class="sec-model">Time × Feature Gradient Heatmap · Untitled3</span>
+      </div>
+      <div class="card">
+        <p class="xai-desc">
+          The saliency map visualises numerical gradients across all <strong>60 time steps × 5 features</strong>,
+          showing which specific (time, feature) combinations were most influential for the MLP prediction.
+          Brighter cells = higher gradient magnitude = more sensitive inputs.
+        </p>
+        <div id="saliency-loading" class="mini-spin-wrap"><div class="mini-spin"></div> Computing saliency map… <small class="slow-note">(~10–20 s)</small></div>
+        <div id="saliency-err" class="xai-err" style="display:none"></div>
+        <div id="saliency-content" style="display:none">
+          <div class="saliency-labels" id="saliency-feat-labels"></div>
+          <canvas id="saliency-canvas" class="saliency-canvas"></canvas>
+          <div class="saliency-legend">
+            <span style="font-size:10px;color:var(--txt-3);">Low gradient</span>
+            <canvas id="saliency-legend-bar" width="200" height="14"></canvas>
+            <span style="font-size:10px;color:var(--txt-3);">High gradient</span>
+          </div>
+          <p style="font-size:11px;color:var(--txt-3);margin-top:8px;">
+            X-axis: 5 OHLCV features · Y-axis: 60 time steps (t-60 = oldest, t-1 = most recent)
+          </p>
+        </div>
+      </div>
+
+    </div><!-- /#results -->
+  </main>
+
+  <footer class="footer">
+    <div class="footer-row">
+      <span class="footer-brand">Volatili<em>X</em></span>
+      <span class="footer-sep">·</span>
+      <span>RF + MLP + BETA · LIME DiCE SHAP Sensitivity LRP Ablation Saliency</span>
+    </div>
+    <p class="footer-disc">For academic and research purposes only. Not financial advice.</p>
+  </footer>
+
+  <script src="/static/js/Main.js"></script>
+</body>
+</html>
