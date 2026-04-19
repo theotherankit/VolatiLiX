@@ -1,6 +1,3 @@
-# trained model artifacts
-model/
-
 __pycache__/
 *.py[cod]
 *.pyo
